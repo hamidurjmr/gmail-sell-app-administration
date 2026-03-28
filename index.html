@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Admin Panel - GmailSell</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+        }
+
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: #1e293b;
+            border-radius: 32px;
+            padding: 40px 28px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .login-icon i {
+            font-size: 40px;
+            color: white;
+        }
+
+        .login-card h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .login-card p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+
+        .google-btn {
+            background: #3b82f6;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 60px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .admin-note {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            min-height: 100vh;
+            background: #0f172a;
+            display: none;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            background: #1e293b;
+            padding: 20px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h2 {
+            font-size: 20px;
+            color: white;
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card i {
+            font-size: 28px;
+            color: #3b82f6;
+            margin-bottom: 10px;
+        }
+
+        .stat-card h3 {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+        }
+
+        /* Cards */
+        .card {
+            background: #1e293b;
+            border-radius: 24px;
+            padding: 20px;
+            margin: 16px;
+        }
+
+        .card h3 {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* List Items */
+        .list-item {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #334155;
+        }
+
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .list-item-info p {
+            margin: 4px 0;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .list-item-info p strong {
+            color: white;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border-radius: 28px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .modal-content h3 {
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .modal-content label {
+            color: #94a3b8;
+            display: block;
+            margin: 12px 0 6px;
+            font-size: 13px;
+        }
+
+        .modal-content input,
+        .modal-content select {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            color: white;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-active { background: #10b98120; color: #10b981; }
+        .badge-suspended { background: #f59e0b20; color: #f59e0b; }
+        .badge-banned { background: #ef444420; color: #ef4444; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 16px 20px;
+            border-top: 1px solid #334155;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 40px;
+        }
+
+        .nav-item i {
+            font-size: 22px;
+            color: #64748b;
+        }
+
+        .nav-item span {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .nav-item.active i,
+        .nav-item.active span {
+            color: #3b82f6;
+        }
+
+        .logout-fab {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            background: #ef4444;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 99;
+        }
+
+        .alert {
+            position: fixed;
+            top: 70px;
+            left: 16px;
+            right: 16px;
+            background: #10b981;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 60px;
+            display: none;
+            text-align: center;
+            z-index: 200;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <div class="login-icon">
+                <i class="fas fa-crown"></i>
+            </div>
+            <h1>Admin Panel</h1>
+            <p>Sign in to manage the platform</p>
+            <button id="googleLoginBtn" class="google-btn">
+                <i class="fab fa-google"></i> Continue with Google
+            </button>
+            <div class="admin-note">
+                <i class="fas fa-shield-alt"></i> Only admin accounts can access
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <div class="header">
+            <h2><i class="fas fa-crown"></i> Admin</h2>
+            <div class="admin-badge" id="adminEmail">Admin</div>
+        </div>
+
+        <div id="statsTab" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card"><i class="fas fa-users"></i><h3>Total Users</h3><div class="value" id="totalUsers">0</div></div>
+                <div class="stat-card"><i class="fas fa-user-check"></i><h3>Active Users</h3><div class="value" id="activeUsers">0</div></div>
+                <div class="stat-card"><i class="fas fa-envelope"></i><h3>Total Sales</h3><div class="value" id="totalSales">0</div></div>
+                <div class="stat-card"><i class="fas fa-dollar-sign"></i><h3>Total Payouts</h3><div class="value" id="totalPayouts">$0</div></div>
+            </div>
+        </div>
+
+        <div id="verifyTab" class="tab-content">
+            <div class="card"><h3><i class="fas fa-clock"></i> Pending Verifications</h3><div id="pendingSales"><div class="loading">Loading...</div></div></div>
+        </div>
+
+        <div id="usersTab" class="tab-content">
+            <div class="card"><h3><i class="fas fa-users"></i> Manage Users</h3><div id="usersList"><div class="loading">Loading...</div></div></div>
+        </div>
+
+        <div id="withdrawalsTab" class="tab-content">
+            <div class="card"><h3><i class="fab fa-bitcoin"></i> Withdrawal Requests</h3><div id="withdrawalRequests"><div class="loading">Loading...</div></div></div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="nav-item active" data-tab="stats"><i class="fas fa-chart-line"></i><span>Stats</span></button>
+            <button class="nav-item" data-tab="verify"><i class="fas fa-check-double"></i><span>Verify</span></button>
+            <button class="nav-item" data-tab="users"><i class="fas fa-users"></i><span>Users</span></button>
+            <button class="nav-item" data-tab="withdrawals"><i class="fab fa-bitcoin"></i><span>Withdraw</span></button>
+        </div>
+
+        <button id="logoutBtn" class="logout-fab"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <!-- Modals -->
+    <div id="rejectModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>Reject Gmail Sale</h3>
+            <p id="rejectGmail" style="color:#94a3b8;margin-bottom:12px;"></p>
+            <select id="rejectReason">
+                <option value="Wrong Password">Wrong Password</option>
+                <option value="Wrong Gmail">Wrong Gmail</option>
+                <option value="Temporary/Disabled">Temporary/Disabled</option>
+                <option value="2-Step Verification">2-Step Verification</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" id="otherReason" placeholder="Other reason" style="display:none;">
+            <div class="modal-actions">
+                <button id="confirmRejectBtn" class="btn-sm btn-danger">Confirm</button>
+                <button id="closeModalBtn" class="btn-sm btn-primary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="userEditModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>Edit User</h3>
+            <div id="editUserInfo"></div>
+            <label>Balance (USD)</label>
+            <input type="number" id="editBalance" step="0.01">
+            <label>Status</label>
+            <select id="editStatus">
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+                <option value="banned">Banned</option>
+            </select>
+            <div class="modal-actions">
+                <button id="saveUserBtn" class="btn-sm btn-success">Save</button>
+                <button id="closeUserModalBtn" class="btn-sm btn-primary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBChVfSCJhhxhDgXWM5x3ryrwYtVZmwSmc",
+            authDomain: "sellapp-66d68.firebaseapp.com",
+            projectId: "sellapp-66d68",
+            storageBucket: "sellapp-66d68.firebasestorage.app",
+            messagingSenderId: "478211272161",
+            appId: "1:478211272161:web:ed55d6c8b366a192ba36a0"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        let currentSaleId = null, currentEditUserId = null;
+
+        auth.getRedirectResult().catch(console.log);
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().role === 'admin') {
+                    document.getElementById('loginPage').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                    document.getElementById('adminEmail').innerHTML = user.email.split('@')[0];
+                    loadPendingSales();
+                    loadAllUsers();
+                    loadWithdrawalRequests();
+                    loadStatistics();
+                } else {
+                    alert('Access denied. Admin only.');
+                    auth.signOut();
+                }
+            } else {
+                document.getElementById('loginPage').style.display = 'flex';
+                document.getElementById('dashboard').style.display = 'none';
+            }
+        });
+
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+            auth.signInWithRedirect(provider);
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const tab = item.dataset.tab;
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById(`${tab}Tab`).classList.add('active');
+                if (tab === 'verify') loadPendingSales();
+                if (tab === 'users') loadAllUsers();
+                if (tab === 'withdrawals') loadWithdrawalRequests();
+                if (tab === 'stats') loadStatistics();
+            });
+        });
+
+        function showAlert(msg) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.innerHTML = msg;
+            alertDiv.style.display = 'block';
+            setTimeout(() => alertDiv.style.display = 'none', 3000);
+        }
+
+        function loadPendingSales() {
+            const div = document.getElementById('pendingSales');
+            div.innerHTML = '<div class="loading">Loading...</div>';
+            db.collection('gmailSales').where('status', '==', 'pending').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                if (snap.empty) { div.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">No pending sales</div>'; return; }
+                let html = '';
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    html += `<div class="list-item">
+                        <div class="list-item-header">
+                            <div class="list-item-info">
+                                <p><strong>${s.userEmail}</strong></p>
+                                <p>📧 ${s.gmailEmail}</p>
+                                <p>🔑 ${s.gmailPassword}</p>
+                                <p>💰 $${s.amount}</p>
+                            </div>
+                            <div class="item-actions">
+                                <button onclick="approveSale('${doc.id}',${s.amount},'${s.userId}')" class="btn-sm btn-success">Approve</button>
+                                <button onclick="showRejectModal('${doc.id}','${s.gmailEmail}')" class="btn-sm btn-danger">Reject</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                div.innerHTML = html;
+            });
+        }
+
+        window.approveSale = async (id, amount, uid) => {
+            if (!confirm(`Approve? Add $${amount}`)) return;
+            try {
+                await db.collection('gmailSales').doc(id).update({ status: 'approved' });
+                const userRef = db.collection('users').doc(uid);
+                const user = await userRef.get();
+                await userRef.update({ balance: (user.data().balance || 0) + amount, totalEarned: (user.data().totalEarned || 0) + amount, totalSales: firebase.firestore.FieldValue.increment(1) });
+                showAlert('✅ Approved');
+            } catch (error) { showAlert('Error: ' + error.message); }
+        };
+
+        window.showRejectModal = (id, email) => { currentSaleId = id; document.getElementById('rejectGmail').innerHTML = email; document.getElementById('rejectModal').style.display = 'flex'; };
+        document.getElementById('rejectReason')?.addEventListener('change', e => { document.getElementById('otherReason').style.display = e.target.value === 'Other' ? 'block' : 'none'; });
+        document.getElementById('confirmRejectBtn')?.addEventListener('click', async () => {
+            if (!currentSaleId) return;
+            let reason = document.getElementById('rejectReason').value;
+            if (reason === 'Other') reason = document.getElementById('otherReason').value;
+            if (!reason) return;
+            await db.collection('gmailSales').doc(currentSaleId).update({ status: 'rejected', rejectionReason: reason });
+            document.getElementById('rejectModal').style.display = 'none';
+            showAlert('❌ Rejected');
+        });
+        document.getElementById('closeModalBtn')?.addEventListener('click', () => document.getElementById('rejectModal').style.display = 'none');
+
+        function loadAllUsers() {
+            const div = document.getElementById('usersList');
+            div.innerHTML = '<div class="loading">Loading...</div>';
+            db.collection('users').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                if (snap.empty) { div.innerHTML = '<div style="text-align:center;padding:40px;">No users</div>'; return; }
+                let html = '';
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    if (u.role === 'admin') return;
+                    html += `<div class="list-item">
+                        <div class="list-item-header">
+                            <div class="list-item-info">
+                                <p><strong>${u.name || u.email}</strong></p>
+                                <p>Balance: $${(u.balance || 0).toFixed(2)}</p>
+                                <p>Earned: $${(u.totalEarned || 0).toFixed(2)}</p>
+                                <p>Sales: ${u.totalSales || 0}</p>
+                                <p><span class="badge badge-${u.status || 'active'}">${(u.status || 'active').toUpperCase()}</span></p>
+                            </div>
+                            <div class="item-actions">
+                                <button onclick="editUser('${doc.id}',${u.balance || 0},'${u.status || 'active'}','${u.name || ''}')" class="btn-sm btn-primary">Edit</button>
+                                ${u.status !== 'banned' ? `<button onclick="banUser('${doc.id}')" class="btn-sm btn-danger">Ban</button>` : ''}
+                                ${u.status !== 'suspended' ? `<button onclick="suspendUser('${doc.id}')" class="btn-sm btn-warning">Suspend</button>` : ''}
+                                ${u.status !== 'active' ? `<button onclick="activateUser('${doc.id}')" class="btn-sm btn-success">Activate</button>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                div.innerHTML = html;
+            });
+        }
+
+        window.editUser = (id, balance, status, name) => { currentEditUserId = id; document.getElementById('editUserInfo').innerHTML = `<p style="color:white;"><strong>${name}</strong></p>`; document.getElementById('editBalance').value = balance; document.getElementById('editStatus').value = status; document.getElementById('userEditModal').style.display = 'flex'; };
+        document.getElementById('saveUserBtn')?.addEventListener('click', async () => { if (currentEditUserId) { await db.collection('users').doc(currentEditUserId).update({ balance: parseFloat(document.getElementById('editBalance').value), status: document.getElementById('editStatus').value }); document.getElementById('userEditModal').style.display = 'none'; showAlert('✅ Updated'); } });
+        document.getElementById('closeUserModalBtn')?.addEventListener('click', () => document.getElementById('userEditModal').style.display = 'none');
+        window.banUser = async id => { if (confirm('Ban?')) await db.collection('users').doc(id).update({ status: 'banned' }); };
+        window.suspendUser = async id => { if (confirm('Suspend?')) await db.collection('users').doc(id).update({ status: 'suspended' }); };
+        window.activateUser = async id => { await db.collection('users').doc(id).update({ status: 'active' }); };
+
+        function loadWithdrawalRequests() {
+            const div = document.getElementById('withdrawalRequests');
+            div.innerHTML = '<div class="loading">Loading...</div>';
+            db.collection('withdrawals').where('status', '==', 'pending').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                if (snap.empty) { div.innerHTML = '<div style="text-align:center;padding:40px;">No pending withdrawals</div>'; return; }
+                let html = '';
+                snap.forEach(doc => {
+                    const w = doc.data();
+                    html += `<div class="list-item">
+                        <div class="list-item-header">
+                            <div class="list-item-info">
+                                <p><strong>${w.userEmail}</strong></p>
+                                <p>💰 $${w.amount}</p>
+                                <p>🏦 ${w.btcAddress}</p>
+                            </div>
+                            <div class="item-actions">
+                                <button onclick="approveWithdrawal('${doc.id}',${w.amount},'${w.userId}')" class="btn-sm btn-success">Approve</button>
+                                <button onclick="rejectWithdrawal('${doc.id}')" class="btn-sm btn-danger">Reject</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                div.innerHTML = html;
+            });
+        }
+
+        window.approveWithdrawal = async (id, amount, uid) => {
+            if (!confirm(`Approve $${amount}?`)) return;
+            await db.collection('withdrawals').doc(id).update({ status: 'completed' });
+            const user = await db.collection('users').doc(uid).get();
+            await db.collection('users').doc(uid).update({ balance: (user.data().balance || 0) - amount });
+            showAlert('✅ Approved');
+        };
+        window.rejectWithdrawal = async id => { if (confirm('Reject?')) await db.collection('withdrawals').doc(id).update({ status: 'rejected' }); };
+
+        async function loadStatistics() {
+            const users = await db.collection('users').where('role', '==', 'user').get();
+            const active = await db.collection('users').where('role', '==', 'user').where('status', '==', 'active').get();
+            const sales = await db.collection('gmailSales').where('status', '==', 'approved').get();
+            const withdrawals = await db.collection('withdrawals').where('status', '==', 'completed').get();
+            let payouts = 0; withdrawals.forEach(d => payouts += d.data().amount);
+            document.getElementById('totalUsers').innerHTML = users.size;
+            document.getElementById('activeUsers').innerHTML = active.size;
+            document.getElementById('totalSales').innerHTML = sales.size;
+            document.getElementById('totalPayouts').innerHTML = `$${payouts.toFixed(2)}`;
+        }
+    </script>
+</body>
+</html>
