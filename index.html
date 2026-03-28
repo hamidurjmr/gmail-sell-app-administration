@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Admin Panel | GmailSell</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: #03050b;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Cyberpunk Grid Background */
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139,92,246,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+        }
+
+        /* Animated Neon Orbs */
+        .neon-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            animation: pulseOrb 15s infinite ease-in-out;
+        }
+
+        .orb-blue { width: 600px; height: 600px; background: rgba(59,130,246,0.3); top: -200px; right: -200px; animation-delay: 0s; }
+        .orb-purple { width: 500px; height: 500px; background: rgba(139,92,246,0.3); bottom: -150px; left: -150px; animation-delay: 5s; }
+        .orb-pink { width: 400px; height: 400px; background: rgba(236,72,153,0.2); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: 10s; }
+
+        @keyframes pulseOrb {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3,5,11,0.85);
+            backdrop-filter: blur(40px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: linear-gradient(135deg, rgba(15,25,45,0.9), rgba(5,10,25,0.95));
+            backdrop-filter: blur(20px);
+            border-radius: 48px;
+            padding: 55px 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(59,130,246,0.3);
+            box-shadow: 0 0 40px rgba(59,130,246,0.2), inset 0 0 20px rgba(255,255,255,0.05);
+            transform: translateY(0);
+            animation: neonGlow 0.8s cubic-bezier(0.34, 1.2, 0.64, 1);
+        }
+
+        @keyframes neonGlow {
+            0% { opacity: 0; transform: scale(0.9) translateY(30px); filter: blur(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+
+        .cyber-logo {
+            font-size: 56px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec489a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-shadow: 0 0 30px rgba(59,130,246,0.5);
+        }
+
+        .login-card p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 35px;
+        }
+
+        .google-cyber {
+            background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.2));
+            border: 1px solid rgba(59,130,246,0.5);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 60px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .google-cyber:hover {
+            background: linear-gradient(135deg, rgba(59,130,246,0.4), rgba(139,92,246,0.4));
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(59,130,246,0.4);
+            border-color: #3b82f6;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding-bottom: 90px;
+            display: none;
+        }
+
+        /* Header */
+        .cyber-header {
+            background: rgba(3,5,11,0.7);
+            backdrop-filter: blur(20px);
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(59,130,246,0.3);
+        }
+
+        .header-glow {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-chip {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(59,130,246,0.15);
+            padding: 6px 16px 6px 8px;
+            border-radius: 60px;
+            border: 1px solid rgba(59,130,246,0.3);
+            transition: all 0.3s;
+        }
+
+        .admin-chip:hover { background: rgba(59,130,246,0.25); transform: scale(1.02); }
+
+        .admin-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 0 15px rgba(59,130,246,0.5);
+        }
+
+        /* Stats Cards */
+        .stats-grid-cyber {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 24px;
+        }
+
+        .stat-card-cyber {
+            background: linear-gradient(135deg, rgba(15,25,45,0.7), rgba(5,10,25,0.8));
+            border-radius: 28px;
+            padding: 24px 16px;
+            text-align: center;
+            border: 1px solid rgba(59,130,246,0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card-cyber::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(59,130,246,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .stat-card-cyber:hover::before { opacity: 1; }
+
+        .stat-card-cyber:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: #3b82f6;
+            box-shadow: 0 0 30px rgba(59,130,246,0.2);
+        }
+
+        .stat-icon-cyber {
+            font-size: 42px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        .stat-label-cyber {
+            font-size: 12px;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .stat-value-cyber {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Neon Cards */
+        .neon-card-admin {
+            background: rgba(10,20,35,0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 32px;
+            padding: 24px;
+            margin: 0 20px 20px;
+            border: 1px solid rgba(59,130,246,0.2);
+            transition: all 0.3s;
+        }
+
+        .neon-card-admin:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 0 25px rgba(59,130,246,0.15);
+        }
+
+        .card-title-cyber {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-title-cyber i {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 24px;
+        }
+
+        /* List Items */
+        .list-item-cyber {
+            background: rgba(0,0,0,0.4);
+            border-radius: 24px;
+            padding: 18px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(59,130,246,0.15);
+            transition: all 0.3s;
+        }
+
+        .list-item-cyber:hover {
+            border-color: #3b82f6;
+            transform: translateX(8px);
+            background: rgba(59,130,246,0.1);
+        }
+
+        .item-header-cyber {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .item-info-cyber p {
+            margin: 4px 0;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .item-info-cyber p strong {
+            color: white;
+        }
+
+        .item-actions-cyber {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-cyber {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .btn-cyber:hover { transform: translateY(-2px); }
+
+        .btn-success-cyber { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .btn-danger-cyber { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .btn-primary-cyber { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .btn-warning-cyber { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+
+        /* Modal */
+        .modal-cyber {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content-cyber {
+            background: linear-gradient(135deg, #0f172a, #0a0f1a);
+            border-radius: 40px;
+            padding: 32px;
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid rgba(59,130,246,0.3);
+            box-shadow: 0 0 40px rgba(59,130,246,0.2);
+        }
+
+        .modal-content-cyber h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .modal-content-cyber label {
+            color: #94a3b8;
+            display: block;
+            margin: 15px 0 8px;
+            font-size: 13px;
+        }
+
+        .modal-content-cyber input,
+        .modal-content-cyber select {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 60px;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav-cyber {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(3,5,11,0.9);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 20px 22px;
+            border-top: 1px solid rgba(59,130,246,0.3);
+            z-index: 100;
+        }
+
+        .nav-cyber {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 60px;
+            transition: all 0.3s;
+        }
+
+        .nav-cyber i { font-size: 24px; color: #64748b; transition: all 0.3s; }
+        .nav-cyber span { font-size: 11px; color: #64748b; font-weight: 500; }
+
+        .nav-cyber.active i,
+        .nav-cyber.active span { color: #3b82f6; }
+
+        .nav-cyber.active {
+            background: rgba(59,130,246,0.15);
+            transform: translateY(-5px);
+        }
+
+        /* FAB */
+        .fab-cyber {
+            position: fixed;
+            bottom: 95px;
+            right: 20px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(239,68,68,0.4);
+            transition: all 0.3s;
+            z-index: 99;
+        }
+
+        .fab-cyber:hover { transform: scale(1.1) rotate(90deg); }
+
+        .toast-cyber {
+            position: fixed;
+            bottom: 110px;
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 60px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+            font-weight: 600;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeUp 0.4s ease; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .empty-state-cyber {
+            text-align: center;
+            padding: 50px;
+            color: #64748b;
+        }
+
+        .empty-state-cyber i { font-size: 55px; margin-bottom: 15px; opacity: 0.5; }
+        .loading-cyber { text-align: center; padding: 50px; color: #64748b; }
+
+        .badge-cyber {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-active { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+        .badge-suspended { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+        .badge-banned { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+    </style>
+</head>
+<body>
+
+<div class="cyber-grid"></div>
+<div class="neon-orb orb-blue"></div>
+<div class="neon-orb orb-purple"></div>
+<div class="neon-orb orb-pink"></div>
+
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <div class="cyber-logo">⚡ ADMIN</div>
+        <p>Secure Management Console • Gmail Selling Platform</p>
+        <button id="googleLoginBtn" class="google-cyber">
+            <i class="fab fa-google"></i> Authenticate with Google
+        </button>
+        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(59,130,246,0.2);">
+            <span style="color: #3b82f6; font-size: 12px;"><i class="fas fa-shield-alt"></i> Authorized personnel only</span>
+        </div>
+    </div>
+</div>
+
+<div id="dashboard" class="dashboard">
+    <div class="cyber-header">
+        <div class="header-glow"><i class="fas fa-crown"></i> Admin Console</div>
+        <div class="admin-chip">
+            <div class="admin-avatar" id="adminAvatar">A</div>
+            <span id="adminEmail" style="color:white; font-weight:500;">Admin</span>
+        </div>
+    </div>
+
+    <div id="statsTab" class="tab-content active">
+        <div class="stats-grid-cyber">
+            <div class="stat-card-cyber"><div class="stat-icon-cyber"><i class="fas fa-users"></i></div><div class="stat-label-cyber">Total Users</div><div class="stat-value-cyber" id="totalUsers">0</div></div>
+            <div class="stat-card-cyber"><div class="stat-icon-cyber"><i class="fas fa-user-check"></i></div><div class="stat-label-cyber">Active Users</div><div class="stat-value-cyber" id="activeUsers">0</div></div>
+            <div class="stat-card-cyber"><div class="stat-icon-cyber"><i class="fas fa-envelope"></i></div><div class="stat-label-cyber">Total Sales</div><div class="stat-value-cyber" id="totalSales">0</div></div>
+            <div class="stat-card-cyber"><div class="stat-icon-cyber"><i class="fas fa-dollar-sign"></i></div><div class="stat-label-cyber">Total Payouts</div><div class="stat-value-cyber" id="totalPayouts">$0</div></div>
+        </div>
+    </div>
+
+    <div id="verifyTab" class="tab-content">
+        <div class="neon-card-admin">
+            <div class="card-title-cyber"><i class="fas fa-clock"></i> Pending Verifications</div>
+            <div id="pendingSales"><div class="loading-cyber">Loading...</div></div>
+        </div>
+    </div>
+
+    <div id="usersTab" class="tab-content">
+        <div class="neon-card-admin">
+            <div class="card-title-cyber"><i class="fas fa-users"></i> User Management</div>
+            <div id="usersList"><div class="loading-cyber">Loading...</div></div>
+        </div>
+    </div>
+
+    <div id="withdrawalsTab" class="tab-content">
+        <div class="neon-card-admin">
+            <div class="card-title-cyber"><i class="fab fa-bitcoin"></i> Withdrawal Requests</div>
+            <div id="withdrawalRequests"><div class="loading-cyber">Loading...</div></div>
+        </div>
+    </div>
+
+    <div class="bottom-nav-cyber">
+        <button class="nav-cyber active" data-tab="stats"><i class="fas fa-chart-line"></i><span>Stats</span></button>
+        <button class="nav-cyber" data-tab="verify"><i class="fas fa-check-double"></i><span>Verify</span></button>
+        <button class="nav-cyber" data-tab="users"><i class="fas fa-users"></i><span>Users</span></button>
+        <button class="nav-cyber" data-tab="withdrawals"><i class="fab fa-bitcoin"></i><span>Withdraw</span></button>
+    </div>
+
+    <button id="logoutBtn" class="fab-cyber"><i class="fas fa-sign-out-alt"></i></button>
+</div>
+
+<div id="toast" class="toast-cyber"></div>
+
+<div id="rejectModal" class="modal-cyber" style="display:none;">
+    <div class="modal-content-cyber">
+        <h3><i class="fas fa-times-circle"></i> Reject Sale</h3>
+        <p id="rejectGmail" style="color:#94a3b8; margin-bottom:15px;"></p>
+        <select id="rejectReason">
+            <option value="Wrong Password">Wrong Password</option>
+            <option value="Wrong Gmail">Wrong Gmail Address</option>
+            <option value="Temporary/Disabled">Temporary/Disabled Account</option>
+            <option value="2-Step Verification">2-Step Verification Required</option>
+            <option value="Other">Other</option>
+        </select>
+        <input type="text" id="otherReason" placeholder="Specify reason" style="display:none; margin-top:10px;">
+        <div style="display: flex; gap: 12px; margin-top: 25px;">
+            <button id="confirmRejectBtn" class="btn-cyber btn-danger-cyber" style="flex:1;">Confirm</button>
+            <button id="closeModalBtn" class="btn-cyber btn-primary-cyber" style="flex:1;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="userEditModal" class="modal-cyber" style="display:none;">
+    <div class="modal-content-cyber">
+        <h3><i class="fas fa-edit"></i> Edit User</h3>
+        <div id="editUserInfo"></div>
+        <label>Balance (USD)</label>
+        <input type="number" id="editBalance" step="0.01">
+        <label>Account Status</label>
+        <select id="editStatus">
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+            <option value="banned">Banned</option>
+        </select>
+        <div style="display: flex; gap: 12px; margin-top: 25px;">
+            <button id="saveUserBtn" class="btn-cyber btn-success-cyber" style="flex:1;">Save</button>
+            <button id="closeUserModalBtn" class="btn-cyber btn-primary-cyber" style="flex:1;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBChVfSCJhhxhDgXWM5x3ryrwYtVZmwSmc",
+        authDomain: "sellapp-66d68.firebaseapp.com",
+        projectId: "sellapp-66d68",
+        storageBucket: "sellapp-66d68.firebasestorage.app",
+        messagingSenderId: "478211272161",
+        appId: "1:478211272161:web:ed55d6c8b366a192ba36a0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let currentSaleId = null, currentEditUserId = null;
+
+    function showToast(msg, isErr = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.background = isErr ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #10b981, #059669)';
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('adminEmail').innerHTML = user.email.split('@')[0];
+            document.getElementById('adminAvatar').innerHTML = (user.displayName || 'A').charAt(0).toUpperCase();
+            
+            const userRef = db.collection('users').doc(user.uid);
+            if (!(await userRef.get()).exists) {
+                await userRef.set({
+                    uid: user.uid, name: user.displayName || user.email.split('@')[0], email: user.email,
+                    role: 'user', balance: 0, totalEarned: 0, totalSales: 0, totalReferrals: 0,
+                    status: 'active', referralCode: user.uid.substring(0,8),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            loadPendingSales();
+            loadAllUsers();
+            loadWithdrawals();
+            loadStats();
+        } else {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').style.display = 'none';
+        }
+    });
+
+    document.getElementById('googleLoginBtn').addEventListener('click', () => {
+        auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => alert('Login error: ' + e.message));
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+
+    document.querySelectorAll('.nav-cyber').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            document.querySelectorAll('.nav-cyber').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+            if (tab === 'verify') loadPendingSales();
+            if (tab === 'users') loadAllUsers();
+            if (tab === 'withdrawals') loadWithdrawals();
+            if (tab === 'stats') loadStats();
+        });
+    });
+
+    function loadPendingSales() {
+        const div = document.getElementById('pendingSales');
+        div.innerHTML = '<div class="loading-cyber">Loading pending sales...</div>';
+        db.collection('gmailSales')
+            .where('status', '==', 'pending')
+            .orderBy('createdAt', 'desc')
+            .onSnapshot(snap => {
+                if (snap.empty) { 
+                    div.innerHTML = '<div class="empty-state-cyber"><i class="fas fa-inbox"></i><p>No pending sales</p></div>'; 
+                    return; 
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const s = doc.data();
+                    const date = s.createdAt ? s.createdAt.toDate().toLocaleString() : 'Just now';
+                    html += `<div class="list-item-cyber">
+                        <div class="item-header-cyber">
+                            <div class="item-info-cyber">
+                                <p><strong>${s.userEmail}</strong></p>
+                                <p>📧 ${s.gmailEmail}</p>
+                                <p>🔑 ${s.gmailPassword}</p>
+                                <p>💰 $${s.amount} | ${date}</p>
+                            </div>
+                            <div class="item-actions-cyber">
+                                <button onclick="approveSale('${doc.id}',${s.amount},'${s.userId}')" class="btn-cyber btn-success-cyber"><i class="fas fa-check"></i> Approve</button>
+                                <button onclick="showRejectModal('${doc.id}','${s.gmailEmail}')" class="btn-cyber btn-danger-cyber"><i class="fas fa-times"></i> Reject</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                div.innerHTML = html;
+            });
+    }
+
+    window.approveSale = async (id, amt, uid) => {
+        if (!confirm(`Approve? Add $${amt} to user balance`)) return;
+        try {
+            await db.collection('gmailSales').doc(id).update({ 
+                status: 'approved', 
+                approvedAt: firebase.firestore.FieldValue.serverTimestamp() 
+            });
+            const u = await db.collection('users').doc(uid).get();
+            await db.collection('users').doc(uid).update({ 
+                balance: (u.data().balance || 0) + amt, 
+                totalEarned: (u.data().totalEarned || 0) + amt, 
+                totalSales: firebase.firestore.FieldValue.increment(1) 
+            });
+            showToast('✅ Sale approved! Balance updated.');
+        } catch (err) { 
+            showToast('Error: ' + err.message, true); 
+        }
+    };
+
+    window.showRejectModal = (id, email) => { 
+        currentSaleId = id; 
+        document.getElementById('rejectGmail').innerHTML = email; 
+        document.getElementById('rejectModal').style.display = 'flex'; 
+    };
+    
+    document.getElementById('rejectReason').addEventListener('change', e => { 
+        document.getElementById('otherReason').style.display = e.target.value === 'Other' ? 'block' : 'none'; 
+    });
+    
+    document.getElementById('confirmRejectBtn').addEventListener('click', async () => {
+        if (!currentSaleId) return;
+        let r = document.getElementById('rejectReason').value;
+        if (r === 'Other') r = document.getElementById('otherReason').value;
+        if (!r) return;
+        try {
+            await db.collection('gmailSales').doc(currentSaleId).update({ 
+                status: 'rejected', 
+                rejectionReason: r,
+                rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            document.getElementById('rejectModal').style.display = 'none';
+            showToast('❌ Sale rejected');
+            currentSaleId = null;
+        } catch (err) { showToast('Error: ' + err.message, true); }
+    });
+    
+    document.getElementById('closeModalBtn').addEventListener('click', () => { 
+        document.getElementById('rejectModal').style.display = 'none'; 
+        currentSaleId = null; 
+    });
+
+    function loadAllUsers() {
+        const div = document.getElementById('usersList');
+        div.innerHTML = '<div class="loading-cyber">Loading users...</div>';
+        db.collection('users').orderBy('createdAt', 'desc').onSnapshot(snap => {
+            if (snap.empty) { 
+                div.innerHTML = '<div class="empty-state-cyber"><i class="fas fa-users"></i><p>No users found</p></div>'; 
+                return; 
+            }
+            let html = '';
+            snap.forEach(doc => {
+                const u = doc.data();
+                if (u.role === 'admin') return;
+                html += `<div class="list-item-cyber">
+                    <div class="item-header-cyber">
+                        <div class="item-info-cyber">
+                            <p><strong>${u.name || u.email}</strong></p>
+                            <p>📧 ${u.email}</p>
+                            <p>💰 Balance: $${(u.balance || 0).toFixed(2)}</p>
+                            <p>📈 Earned: $${(u.totalEarned || 0).toFixed(2)}</p>
+                            <p>📊 Sales: ${u.totalSales || 0}</p>
+                            <p><span class="badge-cyber badge-${u.status || 'active'}">${(u.status || 'active').toUpperCase()}</span></p>
+                        </div>
+                        <div class="item-actions-cyber">
+                            <button onclick="editUser('${doc.id}',${u.balance || 0},'${u.status || 'active'}','${u.name || ''}')" class="btn-cyber btn-primary-cyber"><i class="fas fa-edit"></i> Edit</button>
+                            ${u.status !== 'banned' ? `<button onclick="banUser('${doc.id}')" class="btn-cyber btn-danger-cyber"><i class="fas fa-ban"></i> Ban</button>` : ''}
+                            ${u.status !== 'suspended' ? `<button onclick="suspendUser('${doc.id}')" class="btn-cyber btn-warning-cyber"><i class="fas fa-pause"></i> Suspend</button>` : ''}
+                            ${u.status !== 'active' ? `<button onclick="activateUser('${doc.id}')" class="btn-cyber btn-success-cyber"><i class="fas fa-play"></i> Activate</button>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            div.innerHTML = html;
+        });
+    }
+
+    window.editUser = (id, bal, status, name) => { 
+        currentEditUserId = id; 
+        document.getElementById('editUserInfo').innerHTML = `<p style="color:white;"><strong>${name}</strong></p>`; 
+        document.getElementById('editBalance').value = bal; 
+        document.getElementById('editStatus').value = status; 
+        document.getElementById('userEditModal').style.display = 'flex'; 
+    };
+    
+    document.getElementById('saveUserBtn').addEventListener('click', async () => { 
+        if (currentEditUserId) { 
+            await db.collection('users').doc(currentEditUserId).update({ 
+                balance: parseFloat(document.getElementById('editBalance').value), 
+                status: document.getElementById('editStatus').value 
+            }); 
+            document.getElementById('userEditModal').style.display = 'none'; 
+            showToast('✅ User updated'); 
+        } 
+    });
+    
+    document.getElementById('closeUserModalBtn').addEventListener('click', () => { 
+        document.getElementById('userEditModal').style.display = 'none'; 
+        currentEditUserId = null; 
+    });
+    
+    window.banUser = async id => { 
+        if (confirm('Ban this user? They will not be able to login.')) 
+            await db.collection('users').doc(id).update({ status: 'banned' }); 
+    };
+    window.suspendUser = async id => { 
+        if (confirm('Suspend this user temporarily?')) 
+            await db.collection('users').doc(id).update({ status: 'suspended' }); 
+    };
+    window.activateUser = async id => { 
+        await db.collection('users').doc(id).update({ status: 'active' }); 
+    };
+
+    function loadWithdrawals() {
+        const div = document.getElementById('withdrawalRequests');
+        div.innerHTML = '<div class="loading-cyber">Loading withdrawal requests...</div>';
+        db.collection('withdrawals')
+            .where('status', '==', 'pending')
+            .orderBy('createdAt', 'desc')
+            .onSnapshot(snap => {
+                if (snap.empty) { 
+                    div.innerHTML = '<div class="empty-state-cyber"><i class="fas fa-receipt"></i><p>No pending withdrawals</p></div>'; 
+                    return; 
+                }
+                let html = '';
+                snap.forEach(doc => {
+                    const w = doc.data();
+                    const date = w.createdAt ? w.createdAt.toDate().toLocaleString() : 'Just now';
+                    html += `<div class="list-item-cyber">
+                        <div class="item-header-cyber">
+                            <div class="item-info-cyber">
+                                <p><strong>${w.userEmail}</strong></p>
+                                <p>💰 $${w.amount}</p>
+                                <p>🏦 ${w.btcAddress}</p>
+                                <p>📅 ${date}</p>
+                            </div>
+                            <div class="item-actions-cyber">
+                                <button onclick="approveWithdrawal('${doc.id}',${w.amount},'${w.userId}')" class="btn-cyber btn-success-cyber"><i class="fas fa-check"></i> Approve</button>
+                                <button onclick="rejectWithdrawal('${doc.id}')" class="btn-cyber btn-danger-cyber"><i class="fas fa-times"></i> Reject</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                div.innerHTML = html;
+            });
+    }
+
+    window.approveWithdrawal = async (id, amt, uid) => { 
+        if (!confirm(`Approve $${amt} withdrawal?`)) return; 
+        try {
+            await db.collection('withdrawals').doc(id).update({ 
+                status: 'completed',
+                completedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }); 
+            const u = await db.collection('users').doc(uid).get(); 
+            await db.collection('users').doc(uid).update({ 
+                balance: (u.data().balance || 0) - amt 
+            }); 
+            showToast('✅ Withdrawal approved! Balance deducted.');
+        } catch (err) { showToast('Error: ' + err.message, true); }
+    };
+    
+    window.rejectWithdrawal = async id => { 
+        if (confirm('Reject this withdrawal?')) {
+            await db.collection('withdrawals').doc(id).update({ 
+                status: 'rejected',
+                rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showToast('❌ Withdrawal rejected');
+        }
+    };
+
+    async function loadStats() {
+        try {
+            const users = await db.collection('users').get();
+            const active = await db.collection('users').where('status', '==', 'active').get();
+            const sales = await db.collection('gmailSales').where('status', '==', 'approved').get();
+            const withdrawals = await db.collection('withdrawals').where('status', '==', 'completed').get();
+            let payouts = 0; 
+            withdrawals.forEach(d => payouts += d.data().amount);
+            document.getElementById('totalUsers').innerHTML = users.size;
+            document.getElementById('activeUsers').innerHTML = active.size;
+            document.getElementById('totalSales').innerHTML = sales.size;
+            document.getElementById('totalPayouts').innerHTML = `$${payouts.toFixed(2)}`;
+        } catch (err) {
+            console.log("Stats error:", err);
+        }
+    }
+</script>
+</body>
+</html>
